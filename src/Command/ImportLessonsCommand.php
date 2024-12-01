@@ -6,18 +6,18 @@ namespace App\Command;
 use App\Entity\Course;
 use App\Entity\Department;
 use App\Entity\Group;
-use App\Entity\StudentGroup;
 use App\Entity\Lesson;
 use App\Entity\Room;
 use App\Entity\Teacher;
 use App\Repository\CourseRepository;
 use App\Repository\DepartmentRepository;
 use App\Repository\GroupRepository;
-use App\Repository\StudentGroupRepository;
 use App\Repository\RoomRepository;
 use App\Repository\TeacherRepository;
 use App\Repository\LessonRepository;
+use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
+use Exception;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -117,7 +117,7 @@ class ImportLessonsCommand extends Command
 
             $output->writeln("<info>Lessons imported successfully.</info>");
             return Command::SUCCESS;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->entityManager->rollback();
             $output->writeln("<error>Import failed: {$e->getMessage()}</error>");
             return Command::FAILURE;
@@ -129,21 +129,21 @@ class ImportLessonsCommand extends Command
         // 1. Handle Course
         $courseName = $data['subject'] ?? $data['title'] ?? null;
         if (!$courseName) {
-            throw new \Exception("Course name is missing in lesson data.");
+            throw new Exception("Course name is missing in lesson data.");
         }
         $course = $this->getCourse($courseName);
 
         // 2. Handle Teacher
         $teacherName = $data['worker'] ?? null;
         if (!$teacherName) {
-            throw new \Exception("Teacher name is missing in lesson data.");
+            throw new Exception("Teacher name is missing in lesson data.");
         }
         $teacher = $this->getTeacher($teacherName);
 
         // 3. Handle Group
         $groupName = $data['group_name'] ?? null;
         if (!$groupName) {
-            throw new \Exception("Group name is missing in lesson data.");
+            throw new Exception("Group name is missing in lesson data.");
         }
         $tokName = $data['tok_name'] ?? '';
         $isStationary = $this->determineStationary($tokName);
@@ -152,7 +152,7 @@ class ImportLessonsCommand extends Command
         // 4. Handle Room
         $roomName = $data['room'] ?? null;
         if (!$roomName) {
-            throw new \Exception("Room name is missing in lesson data.");
+            throw new Exception("Room name is missing in lesson data.");
         }
         $room = $this->getRoom($roomName);
 
@@ -165,8 +165,8 @@ class ImportLessonsCommand extends Command
         $lesson->setTeacher($teacher);
         $lesson->setGroup($group);
         $lesson->setRoom($room);
-        $lesson->setStartTime(new \DateTime($data['start']));
-        $lesson->setEndTime(new \DateTime($data['end']));
+        $lesson->setStartTime(new DateTime($data['start']));
+        $lesson->setEndTime(new DateTime($data['end']));
         $lesson->setType($lessonType);
 
         return $lesson;
@@ -234,9 +234,9 @@ class ImportLessonsCommand extends Command
 
         $room = $this->roomRepository->findOneBy(['name' => $name]);
         if (!$room) {
-            $departmentName = $this->getDepartmentNameFromRoomName($name);
+            $departmentName = $this->getDepartmentName($name);
             if (!$departmentName) {
-                throw new \Exception("Department name could not be extracted from room name: $name");
+                throw new Exception("Department name could not be extracted from room name: $name");
             }
 
             $department = $this->getDepartment($departmentName);
@@ -267,15 +267,7 @@ class ImportLessonsCommand extends Command
         return $department;
     }
 
-    /**
-     * Extracts the department name from a room name.
-     *
-     * The department name is assumed to be the first word before the first space in the room name.
-     *
-     * @param string $roomName The full name of the room.
-     * @return string The extracted department name. Returns an empty string if $roomName is empty.
-     */
-    private function getDepartmentNameFromRoomName(string $roomName): string
+    private function getDepartmentName(string $roomName): string
     {
         // Trim any leading/trailing whitespace
         $trimmedRoomName = trim($roomName);
@@ -292,15 +284,6 @@ class ImportLessonsCommand extends Command
         return strtoupper($parts[0]);
     }
 
-    /**
-     * Determines if a group is stationary based on the tok_name.
-     *
-     * Example tok_name format: "I_1A_S_2021_2022_1" or "I_1A_N_2021_2022_1"
-     * "S" denotes stationary, "N" denotes non-stationary
-     *
-     * @param string $tokName
-     * @return bool
-     */
     private function determineStationary(string $tokName): bool
     {
         $parts = explode('_', $tokName);
