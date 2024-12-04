@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan Zajęć</title>
+    <style>
+        {{ cssContent|raw }}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="sidebar">
+        <div class="search-section">
+            <button class="btn search">Szukaj</button>
+            <button class="btn options">...</button>
+            <button class="btn clear">✖</button>
+        </div>
+        <div class="query-list">
+            <button class="btn add-query">Dodaj zapytanie</button>
+        </div>
+    </div>
+    <div class="calendar-section">
+        <div class="calendar-header">
+            <button class="btn prev">◀</button>
+            <button class="btn next">▶</button>
+            <button class="btn today">Dzisiaj</button>
+            <select class="view-selector">
+                <option value="tydzien">Tydzień</option>
+                <option value="dzien">Dzień</option>
+                <option value="miesiac">Miesiąc</option>
+            </select>
+        </div>
+        <div class="calendar-container">
+            <!--
+             Kalendarz
+             -->
+        </div>
+        <button class="settings-icon">⚙</button>
+    </div>
+</div>
+<script>
+    {{ jsContent|raw }}
+</script>
+</body>
+</html>
