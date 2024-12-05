@@ -20,29 +20,30 @@
             <button class="btn clear">✖</button>
         </div>
         <div class="query-list">
-            <form method="get">
+            <form method="get" action="/calendar">
                 <label>
                     Wykładowca:
-                    <input id="lectorer" type="text" onChange={} />
+                    <input id="lectorer" type="text" name="query[0][teacher]" />
                 </label>
                 <label>
                     Sala:
-                    <input id="classroom" type="text" onChange={} />
+                    <input id="classroom" type="text" name="query[0][room]" />
                 </label>
                 <label>
                     Przedmiot:
-                    <input id="subject" type="text" onChange={} />
+                    <input id="subject" type="text" name="query[0][course]" />
                 </label>
                 <label>
                     Grupa:
-                    <input id="group" type="text" onChange={} />
+                    <input id="group" type="text" name="query[0][group]" />
                 </label>
                 <label>
                     Numer albumu:
-                    <input id="index" type="text" onChange={} />
+                    <input id="index" type="text" name="query[0][album]" />
                 </label>
+                <button type="submit" class="btn add-query">Dodaj zapytanie</button>
             </form>
-            <button class="btn add-query">Dodaj zapytanie</button>
+
         </div>
     </div>
     <div class="calendar-section">
