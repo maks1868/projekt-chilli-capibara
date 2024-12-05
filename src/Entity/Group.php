@@ -8,9 +8,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: GroupRepository::class)]
-#[ORM\Table(name: '`group`', uniqueConstraints: [
-    new ORM\UniqueConstraint(name: 'group_name_stationary_unique', columns: ['name', 'stationary'])
-])]
+#[ORM\Table(name: '`group`')]
 class Group
 {
     #[ORM\Id]
@@ -21,14 +19,14 @@ class Group
     #[ORM\Column]
     private ?bool $stationary = null;
 
-    #[ORM\Column(length: 50, unique: true)]
+    #[ORM\Column(length: 50)]
     private ?string $name = null;
 
-    /**
-     * @var Collection<int, Lesson>
-     */
     #[ORM\OneToMany(targetEntity: Lesson::class, mappedBy: 'group', orphanRemoval: true)]
+
     private Collection $lessons;
+    #[ORM\ManyToMany(targetEntity: Student::class, mappedBy: 'groups')]
+    private Collection $students;
 
     public function __construct()
     {
@@ -63,10 +61,6 @@ class Group
 
         return $this;
     }
-
-    /**
-     * @return Collection<int, Lesson>
-     */
     public function getLessons(): Collection
     {
         return $this->lessons;
@@ -89,6 +83,29 @@ class Group
             if ($lesson->getGroupName() === $this) {
                 $lesson->setGroupName(null);
             }
+        }
+
+        return $this;
+    }
+    public function getStudents(): Collection
+    {
+        return $this->students;
+    }
+
+    public function addStudent(Student $student): self
+    {
+        if (!$this->students->contains($student)) {
+            $this->students->add($student);
+            $student->addGroup($this);
+        }
+
+        return $this;
+    }
+
+    public function removeStudent(Student $student): self
+    {
+        if ($this->students->removeElement($student)) {
+            $student->removeGroup($this);
         }
 
         return $this;

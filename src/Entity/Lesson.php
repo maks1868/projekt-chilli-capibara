@@ -15,22 +15,30 @@ use Doctrine\ORM\Mapping as ORM;
         'room_id',
         'start_time',
         'end_time',
-        'type'
+        'type',
+        'status'
     ])
 ])]
 class Lesson
 {
+    const TYPE_LECTURE = 1;
+    const TYPE_LAB = 2;
+    const TYPE_AUDITORY = 3;
+    const TYPE_LECTORATE = 4;
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'IDENTITY')]
     #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
+    /**
+     * @var Course|null
+     */
     #[ORM\ManyToOne(inversedBy: 'lessons')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Course $course = null;
 
     #[ORM\ManyToOne(inversedBy: 'lessons')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     private ?Group $group = null;
 
     #[ORM\ManyToOne(inversedBy: 'lessons')]
@@ -48,8 +56,9 @@ class Lesson
     private ?\DateTimeInterface $end_time = null;
 
     #[ORM\Column(length: 50)]
-    private ?string $type = null;
-
+    private ?string $status = null;
+    #[ORM\Column(nullable: true)]
+    private ?int $type = null;
     public function getId(): ?int
     {
         return $this->id;
@@ -127,12 +136,23 @@ class Lesson
         return $this;
     }
 
-    public function getType(): ?string
+    public function getStatus(): ?string
+    {
+        return $this->status;
+    }
+
+
+    public function setStatus(?string $status): void
+    {
+        $this->status = $status;
+    }
+
+    public function getType(): ?int
     {
         return $this->type;
     }
 
-    public function setType(string $type): static
+    public function setType(?int $type): static
     {
         $this->type = $type;
 

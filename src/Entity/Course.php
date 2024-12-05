@@ -18,9 +18,6 @@ class Course
     #[ORM\Column(length: 50, unique: true)]
     private ?string $name = null;
 
-    /**
-     * @var Collection<int, Lesson>
-     */
     #[ORM\OneToMany(targetEntity: Lesson::class, mappedBy: 'course')]
     private Collection $lessons;
 
@@ -46,9 +43,6 @@ class Course
         return $this;
     }
 
-    /**
-     * @return Collection<int, Lesson>
-     */
     public function getLessons(): Collection
     {
         return $this->lessons;
@@ -67,7 +61,6 @@ class Course
     public function removeLesson(Lesson $lesson): static
     {
         if ($this->lessons->removeElement($lesson)) {
-            // set the owning side to null (unless already changed)
             if ($lesson->getCourse() === $this) {
                 $lesson->setCourse(null);
             }
