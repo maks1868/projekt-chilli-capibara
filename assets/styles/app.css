@@ -1,4 +1,5 @@
-body {
+body
+{
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
@@ -9,7 +10,8 @@ body {
     background-color: #f8f9fa;
 }
 
-.container {
+.container
+{
     display: flex;
     width: 80%;
     height: 80vh;
@@ -20,7 +22,8 @@ body {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-.sidebar {
+.sidebar
+{
     width: 25%;
     background-color: #f4f4f4;
     padding: 16px;
@@ -31,26 +34,68 @@ body {
     border-right: 1px solid #ddd;
 }
 
-.search-section {
+.search-section
+{
     display: flex;
     justify-content: space-around;
     margin-bottom: 16px;
 }
 
-.query-list {
-    flex-grow: 1;
+form
+{
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 16px;
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #ddd;
 }
 
-.query-item {
-    height: 40px;
-    background-color: #e0e0e0;
+label
+{
+    display: flex;
+    flex-direction: column;
+    font-size: 14px;
+    font-weight: bold;
+    color: #333;
+}
+
+input
+{
+    margin-top: 8px;
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid #ccc;
     border-radius: 5px;
+    outline: none;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.btn {
+input:focus
+{
+    border-color: #007bff;
+    box-shadow: 0 0 4px rgba(0, 123, 255, 0.3);
+}
+
+button.btn.add-query
+{
+    padding: 12px;
+    font-size: 16px;
+    text-transform: uppercase;
+    font-weight: bold;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+button.btn.add-query:hover
+{
+    background-color: #0056b3;
+    transform: scale(1.02);
+}
+
+.btn
+{
     border: none;
     background-color: #007bff;
     color: white;
@@ -59,22 +104,26 @@ body {
     cursor: pointer;
 }
 
-.btn.clear {
+.btn.clear
+{
     background-color: #dc3545;
 }
 
-.btn.add-query {
+.btn.add-query
+{
     width: 100%;
     margin-top: 16px;
 }
 
-.calendar-section {
+.calendar-section
+{
     flex-grow: 1;
     display: flex;
     flex-direction: column;
 }
 
-.calendar-header {
+.calendar-header
+{
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -83,11 +132,13 @@ body {
     border-bottom: 1px solid #ddd;
 }
 
-.calendar-header .view-selector {
+.calendar-header .view-selector
+{
     margin-left: auto;
 }
 
-.calendar-container {
+.calendar-container
+{
     flex-grow: 1;
     background-color: #e9ecef;
     display: flex;
@@ -95,7 +146,8 @@ body {
     align-items: center;
 }
 
-.settings-icon {
+.settings-icon
+{
     position: absolute;
     top: 16px;
     right: 16px;
@@ -103,4 +155,72 @@ body {
     border: none;
     font-size: 24px;
     cursor: pointer;
+}
+@media only screen and (max-width: 600px)
+{
+    .sidebar
+    {
+        display: none;
+    }
+
+    .search-section
+    {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+    }
+
+    .btn.search
+    {
+        width: 100%;
+        background-color: #007bff;
+        color: white;
+        font-size: 16px;
+        font-weight: bold;
+    }
+
+    .query-list
+    {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.95);
+        z-index: 10;
+        padding: 20px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .query-list.show
+    {
+        display: block;
+    }
+
+    .query-list button
+    {
+        margin-top: 16px;
+    }
+
+    .query-list .btn.add-query
+    {
+        background-color: #28a745;
+    }
+
+    .query-list .btn.clear
+    {
+        background-color: #dc3545;
+    }
+
+    .calendar-section
+    {
+        width: 100%;
+    }
+
+    .calendar-container
+    {
+        width: 100%;
+        height: calc(100% - 80px);
+    }
 }

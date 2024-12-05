@@ -7,6 +7,9 @@
     <style>
         {{ cssContent|raw }}
     </style>
+    <script>
+        {{ jsContent|raw }}
+    </script>
 </head>
 <body>
 <div class="container">
@@ -17,6 +20,28 @@
             <button class="btn clear">✖</button>
         </div>
         <div class="query-list">
+            <form method="get">
+                <label>
+                    Wykładowca:
+                    <input id="lectorer" type="text" onChange={} />
+                </label>
+                <label>
+                    Sala:
+                    <input id="classroom" type="text" onChange={} />
+                </label>
+                <label>
+                    Przedmiot:
+                    <input id="subject" type="text" onChange={} />
+                </label>
+                <label>
+                    Grupa:
+                    <input id="group" type="text" onChange={} />
+                </label>
+                <label>
+                    Numer albumu:
+                    <input id="index" type="text" onChange={} />
+                </label>
+            </form>
             <button class="btn add-query">Dodaj zapytanie</button>
         </div>
     </div>
@@ -39,8 +64,5 @@
         <button class="settings-icon">⚙</button>
     </div>
 </div>
-<script>
-    {{ jsContent|raw }}
-</script>
 </body>
 </html>

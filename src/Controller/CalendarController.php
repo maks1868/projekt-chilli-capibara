@@ -11,8 +11,8 @@ class CalendarController extends AbstractController
     #[Route('/calendar', name: 'app_calendar')]
     public function index(): Response
     {
-        $cssContent = file_get_contents('../assets/styles/app.css'); // Ścieżka do pliku CSS
-        $jsContent = file_get_contents('../assets/app.js'); // Ścieżka do pliku JS
+        $cssContent = file_get_contents('../assets/styles/app.css');
+        $jsContent = file_get_contents('../assets/app.js');
 
         return $this->render('calendar/index.html.twig', [
             'cssContent' => $cssContent,
