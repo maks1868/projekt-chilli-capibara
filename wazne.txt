@@ -1,0 +1,12 @@
+php .\bin\console make:controller
+php -S 127.0.0.1:8080 -t .\public\
+
+MapRequestRepload
+MapQuetryParameter
+Symfony
+forum method Get
+
+
+zmienić url 
+ajax to api 
+zwrotką api podmienić wartość kalendarza
