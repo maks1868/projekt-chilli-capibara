@@ -1,68 +1,73 @@
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plan Zajęć</title>
-    <style>
-        {{ cssContent|raw }}
-    </style>
-    <script>
-        {{ jsContent|raw }}
-    </script>
-</head>
-<body>
-<div class="container">
-    <div class="sidebar">
-        <div class="search-section">
-            <button class="btn search">Szukaj</button>
-            <button class="btn options">...</button>
-            <button class="btn clear">✖</button>
+{% extends "base.html.twig" %}
+{% block body %}
+    <div class="container">
+        <div class="sidebar">
+            <div class="search-section">
+                <button class="btn search">Szukaj</button>
+                <button class="btn options" onclick="toggleOptionsMenu()">...</button>
+                <button class="btn clear" onclick="clearFormOrTabs()">✖</button>
+            </div>
+            <div class="query-list">
+                <form id="query-form" method="get">
+                    <label>
+                        Wykładowca:
+                        <input id="lectorer" type="text" />
+                    </label>
+                    <label>
+                        Sala:
+                        <input id="classroom" type="text" />
+                    </label>
+                    <label>
+                        Przedmiot:
+                        <input id="subject" type="text" />
+                    </label>
+                    <label>
+                        Grupa:
+                        <input id="group" type="text" />
+                    </label>
+                    <label>
+                        Numer albumu:
+                        <input id="index" type="text" />
+                    </label>
+                </form>
+                <button class="btn add-query" onclick="addQueryTab()">Dodaj zapytanie</button>
+                <div id="query-tabs"></div>
+            </div>
         </div>
-        <div class="query-list">
-            <form method="get">
-                <label>
-                    Wykładowca:
-                    <input id="lectorer" type="text" onChange={} />
-                </label>
-                <label>
-                    Sala:
-                    <input id="classroom" type="text" onChange={} />
-                </label>
-                <label>
-                    Przedmiot:
-                    <input id="subject" type="text" onChange={} />
-                </label>
-                <label>
-                    Grupa:
-                    <input id="group" type="text" onChange={} />
-                </label>
-                <label>
-                    Numer albumu:
-                    <input id="index" type="text" onChange={} />
-                </label>
-            </form>
-            <button class="btn add-query">Dodaj zapytanie</button>
+        <div class="calendar-section">
+            <div class="calendar-header">
+                <button class="btn prev">◀</button>
+                <button class="btn next">▶</button>
+                <button class="btn today">Dzisiaj</button>
+                <button class="btn show-mobile">Pokaż menu</button>
+                <select class="view-selector">
+                    <option value="tydzien">Tydzień</option>
+                    <option value="dzien">Dzień</option>
+                    <option value="miesiac">Miesiąc</option>
+                </select>
+            </div>
+            <div class="calendar-container">
+                <!-- Kalendarz -->
+            </div>
+            <button class="settings-icon">⚙️</button>
+            <button id="night-mode-icon">🌑</button>
         </div>
     </div>
-    <div class="calendar-section">
-        <div class="calendar-header">
-            <button class="btn prev">◀</button>
-            <button class="btn next">▶</button>
-            <button class="btn today">Dzisiaj</button>
-            <select class="view-selector">
-                <option value="tydzien">Tydzień</option>
-                <option value="dzien">Dzień</option>
-                <option value="miesiac">Miesiąc</option>
-            </select>
+
+    <div id="options-menu" class="options-menu hidden">
+        <div id="options-content">
+            <h3>Opcje</h3>
+            <ul>
+                <li><button class="option-btn" data-option="display-info">Wybierz jakie informacje o zajęciach wyświetlać</button></li>
+                <li><button class="option-btn" data-option="edit-colors">Edytuj kolory kafelków</button></li>
+                <li><button class="option-btn" data-option="display-modes">Tryby wyświetlania</button></li>
+            </ul>
         </div>
-        <div class="calendar-container">
-            <!--
-             Kalendarz
-             -->
-        </div>
-        <button class="settings-icon">⚙</button>
     </div>
-</div>
-</body>
-</html>
+
+    <div id="sub-options-menu" class="sub-options-menu hidden">
+        <button class="btn back" onclick="goBackToOptions()">⟵ Powrót</button>
+        <h3 id="sub-options-title"></h3>
+        <div id="sub-options-content"></div>
+    </div>
+{% endblock %}
