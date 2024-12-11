@@ -1,5 +1,6 @@
 php .\bin\console make:controller
 php -S 127.0.0.1:8080 -t .\public\
+php .\composer.phar require --dev doctrine/doctrine-fixtures-bundle
 
 MapRequestRepload
 MapQuetryParameter

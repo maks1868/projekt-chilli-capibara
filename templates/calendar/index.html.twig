@@ -7,9 +7,15 @@
     <style>
         {{ cssContent|raw }}
     </style>
+
     <script>
+
         {{ jsContent|raw }}
+
+
+
     </script>
+
 </head>
 <body>
 <div class="container">
@@ -20,30 +26,15 @@
             <button class="btn clear">✖</button>
         </div>
         <div class="query-list">
-            <form method="get" action="/calendar">
-                <label>
-                    Wykładowca:
-                    <input id="lectorer" type="text" name="query[0][teacher]" />
-                </label>
-                <label>
-                    Sala:
-                    <input id="classroom" type="text" name="query[0][room]" />
-                </label>
-                <label>
-                    Przedmiot:
-                    <input id="subject" type="text" name="query[0][course]" />
-                </label>
-                <label>
-                    Grupa:
-                    <input id="group" type="text" name="query[0][group]" />
-                </label>
-                <label>
-                    Numer albumu:
-                    <input id="index" type="text" name="query[0][album]" />
-                </label>
-                <button type="submit" class="btn add-query">Dodaj zapytanie</button>
-            </form>
-
+            {# templates/calendar/form.html.twig #}
+            {{ form_start(form, {'method': 'GET', 'action': path('app_calendar')}) }}
+            {{ form_row(form.teacher)}} {# {'attr':{'class':'autocomplete-teacher'}})#}
+            {{ form_row(form.room) }}
+            {{ form_row(form.course) }}
+            {{ form_row(form.group) }}
+            {{ form_row(form.album) }}
+            <button type="submit" class="btn add-query">Dodaj zapytanie</button>
+            {{ form_end(form) }}
         </div>
     </div>
     <div class="calendar-section">
@@ -65,5 +56,6 @@
         <button class="settings-icon">⚙</button>
     </div>
 </div>
+
 </body>
 </html>

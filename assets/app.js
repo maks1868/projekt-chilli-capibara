@@ -7,6 +7,7 @@ import './bootstrap.js';
  */
 import './styles/app.css';
 
+
 // console.log('This log comes from assets/app.js - welcome to AssetMapper! 🎉');
 console.log('Kalendarz Plan Zajęć załadowany.');
 
