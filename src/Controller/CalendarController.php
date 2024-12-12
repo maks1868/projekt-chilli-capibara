@@ -4,12 +4,18 @@ namespace App\Controller;
 
 use App\Entity\Teacher;
 use App\Form\CalendarQueryType;
+use App\Repository\CourseRepository;
+use App\Repository\GroupRepository;
+use App\Repository\StudentRepository;
 use App\Repository\TeacherRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\Routing\Attribute\Route;
+use App\Repository\RoomRepository;
+use App\Repository\LessonRepository;
+use Symfony\Component\HttpFoundation\Request;
 
 class CalendarController extends AbstractController
 {
@@ -74,6 +80,86 @@ class CalendarController extends AbstractController
     }
 
 
-}
+    #[Route('/calendar/search', name: 'calendar_search')]
+    public function search(
+        Request $request,
+        TeacherRepository $teacherRepository,
+        RoomRepository $roomRepository,
+        CourseRepository $courseRepository,
+        GroupRepository $groupRepository,
+        StudentRepository $studentRepository,
+        LessonRepository $lessonRepository
+    ): JsonResponse {
+        // Pobierz parametry filtrów z zapytania
+        $teacherParam = $request->query->get('teacher');
+        $roomParam = $request->query->get('room');
+        $courseParam = $request->query->get('course');
+        $groupParam = $request->query->get('group');
+        $studentParam = $request->query->get('student');
 
+        // Budowanie dynamicznego zapytania za pomocą QueryBuilder
+        $queryBuilder = $lessonRepository->createQueryBuilder('l');
+
+        if ($teacherParam) {
+            $queryBuilder
+                ->join('l.teacher', 't')
+                ->andWhere('t.name = :teacher')
+                ->setParameter('teacher', $teacherParam);
+        }
+
+        if ($roomParam) {
+            $queryBuilder
+                ->join('l.room', 'r')
+                ->andWhere('r.name = :room')
+                ->setParameter('room', $roomParam);
+        }
+
+        if ($courseParam) {
+            $queryBuilder
+                ->join('l.course', 'c')
+                ->andWhere('c.name = :course')
+                ->setParameter('course', $courseParam);
+        }
+
+        if ($groupParam) {
+            $queryBuilder
+                ->join('l.group', 'g')
+                ->andWhere('g.name = :group')
+                ->setParameter('group', $groupParam);
+        }
+
+        if ($studentParam) {
+            $queryBuilder
+                ->join('l.group', 'g_student')
+                ->join('g_student.students', 's')
+                ->andWhere('s.name = :student')
+                ->setParameter('student', $studentParam);
+        }
+
+        // Pobranie wyników
+        $lessons = $queryBuilder->getQuery()->getResult();
+
+        // Przygotowanie danych do zwrotu
+        $lessonsData = array_map(function ($lesson) {
+            return [
+                'id' => $lesson->getId(),
+                'course' => $lesson->getCourse()->getName(),
+                'teacher' => $lesson->getTeacher()->getName(),
+                'group' => $lesson->getGroup()->getName(),
+                'room' => $lesson->getRoom()->getName(),
+                'start_time' => $lesson->getStartTime()->format('Y-m-d H:i:s'),
+                'end_time' => $lesson->getEndTime()->format('Y-m-d H:i:s'),
+                'type' => $lesson->getType(),
+            ];
+        }, $lessons);
+
+        // Zwrot JSON z danymi
+        return new JsonResponse([
+            'status' => 'success',
+            'message' => count($lessonsData) > 0 ? 'Lessons found.' : 'No lessons found.',
+            'data' => $lessonsData,
+        ]);
+    }
+
+}
 
