@@ -18,7 +18,6 @@ use Exception;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\HttpClient\HttpClient;
 
@@ -34,7 +33,13 @@ class ImportTeacherScheduleCommand extends Command
     private RoomRepository $roomRepository;
     private LessonRepository $lessonRepository;
 
+    // Increase or adjust as needed
     private const BATCH_SIZE = 100;
+
+    // Simple caches for frequently requested entities within a batch
+    private array $courseCache = [];
+    private array $groupCache = [];
+    private array $roomCache = [];
 
     public function __construct(
         EntityManagerInterface $entityManager,
@@ -56,13 +61,11 @@ class ImportTeacherScheduleCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        ini_set('memory_limit', '256M');
+        ini_set('memory_limit', '1024M');
 
-//        $start = '2024-10-01';
-//        $end = '2025-02-28';
+        $start = '2024-10-01';
+        $end = '2025-02-28';
 
-        $start = '2024-12-02';
-        $end = '2024-12-03';
         if (!$this->validateDate($start) || !$this->validateDate($end)) {
             $output->writeln('<error>Start and End dates must be in YYYY-MM-DD format</error>');
             return Command::FAILURE;
@@ -79,68 +82,61 @@ class ImportTeacherScheduleCommand extends Command
 
         try {
             $batch_count = 0;
+            $httpClient = HttpClient::create();
 
-            foreach ($teachers as $teacher) {
-                $teacherName = $teacher->getName();
-
+            $startEncoded = urlencode($start . 'T00:00:00+01:00');
+            $endEncoded = urlencode($end . 'T00:00:00+01:00');
+            foreach ($teachers as $originalTeacher) {
+                $teacherId = $originalTeacher->getId();
+                $teacherName = $originalTeacher->getName();
                 $teacherEncoded = urlencode($teacherName);
-                $startEncoded = urlencode($start . 'T00:00:00+01:00');
-                $endEncoded = urlencode($end . 'T00:00:00+01:00');
 
                 $url = "https://plan.zut.edu.pl/schedule_student.php?teacher={$teacherEncoded}&start={$startEncoded}&end={$endEncoded}";
 
-                $httpClient = HttpClient::create();
                 $response = $httpClient->request('GET', $url);
-
-                if ($response->getStatusCode() !== 200) {
-                    $output->writeln("<error>Failed to fetch schedule data for teacher '{$teacherName}'</error>");
+                if ($response->getStatusCode() !== 200)
                     continue;
-                }
+
 
                 $data = $response->toArray();
 
+                if (empty($data) || $data === [[]])
+                    continue;
+
+
                 foreach ($data as $lessonData) {
-                    $lesson = $this->processLessonData($lessonData, $teacher, $output);
-
-                    if (!$lesson) {
-                        continue;
-                    }
-
-                    $existingLesson = $this->lessonRepository->findOneBy([
-                        'course' => $lesson->getCourse(),
-                        'teacher' => $lesson->getTeacher(),
-                        'group' => $lesson->getGroup(),
-                        'room' => $lesson->getRoom(),
-                        'start_time' => $lesson->getStartTime(),
-                        'end_time' => $lesson->getEndTime(),
-                        'type' => $lesson->getType(),
-                        'status' => $lesson->getStatus()
-                    ]);
-
-                    if (!$existingLesson) {
-                        $this->entityManager->persist($lesson);
-                        $output->writeln("<info>Imported lesson for '{$teacherName}': {$lesson->getCourse()->getName()}</info>");
-                    } else {
-                        $output->writeln("<info>This lesson exists for '{$teacherName}': {$lesson->getCourse()->getName()}</info>");
-                    }
-
-                    $batch_count++;
-
-                    if (($batch_count % self::BATCH_SIZE) === 0) {
+                    if (($batch_count % self::BATCH_SIZE) === 0 && $batch_count > 0) {
                         $this->entityManager->flush();
                         $this->entityManager->clear();
 
-                        $teacher = $this->teacherRepository->findOneBy(['name' => $teacherName]);
+                        $this->courseCache = [];
+                        $this->groupCache = [];
+                        $this->roomCache = [];
 
-                        $output->writeln("<info>Processed {$batch_count} lessons</info>");
+                        $teacher = $this->teacherRepository->find($teacherId);
+                        if (!$teacher)
+                            continue;
+
+                        $output->writeln("<info>Processed {$batch_count} lessons so far</info>");
                     }
+                    else
+                        $teacher = $originalTeacher;
+
+
+                    $lesson = $this->processLessonData($lessonData, $teacher);
+                    if (!$lesson)
+                        continue;
+
+
+                    $this->entityManager->persist($lesson);
+                    $batch_count++;
                 }
             }
 
             $this->entityManager->flush();
             $this->entityManager->commit();
 
-            $output->writeln('<info>All teacher schedules imported successfully.</info>');
+            $output->writeln("<info>All teacher schedules imported successfully. Total lessons: {$batch_count}</info>");
             return Command::SUCCESS;
         } catch (Exception $e) {
             $this->entityManager->rollback();
@@ -149,86 +145,83 @@ class ImportTeacherScheduleCommand extends Command
         }
     }
 
-    private function processLessonData(array $data, Teacher $teacher, OutputInterface $output): ?Lesson
+    private function processLessonData(array $data, Teacher $teacher): ?Lesson
     {
-        try {
-            $courseName = $data['subject'] ?? null;
-            if (!$courseName) {
-                $output->writeln('<info>No course name in lesson data</info>');
-                return null;
-            }
-            $course = $this->getCourse($courseName, $output);
-
-            $group = null;
-            $groupName = $data['group_name'] ?? null;
-            if ($groupName) {
-                $tokName = $data['tok_name'] ?? '';
-                $isStationary = $this->determineStationary($tokName);
-                $group = $this->getGroup($groupName, $isStationary, $output);
-            }
-
-            $roomName = $data['room'] ?? null;
-            if (!$roomName) {
-                $output->writeln('<info>No room name in lesson data</info>');
-                return null;
-            }
-
-            $room = $this->getRoom($roomName, $output);
-            if (!$room) {
-                return null;
-            }
-
-            $lessonType = $data['lesson_form'] ?? null;
-            $lessonStatus = $data['status_item'] ?? 'normalne';
-
-            $lesson = new Lesson();
-            $lesson->setCourse($course);
-            $lesson->setTeacher($teacher);
-            $lesson->setGroup($group);
-            $lesson->setRoom($room);
-            $lesson->setStartTime(new \DateTime($data['start']));
-            $lesson->setEndTime(new \DateTime($data['end']));
-            $lesson->setType($lessonType);
-            $lesson->setStatus($lessonStatus);
-
-            return $lesson;
-        } catch (Exception $e) {
-            $output->writeln('<error>Error processing lesson data: ' . $e->getMessage() . '</error>');
+        if (!isset($data['start']) || !isset($data['end']))
             return null;
+
+
+        $courseName = $data['subject'] ?? null;
+        $course = $this->getCourse($courseName);
+
+        $group = null;
+        $groupName = $data['group_name'] ?? null;
+        if ($groupName) {
+            $tokName = $data['tok_name'] ?? '';
+            $isStationary = $this->determineStationary($tokName);
+            $group = $this->getGroup($groupName, $isStationary);
         }
+
+        $roomName = $data['room'] ?? null;
+        $room = $this->getRoom($roomName);
+
+        $lessonType = $this->determineLessonType($data['lesson_form'] ?? null);
+        $lessonStatus = $this->determineLessonStatus($data['status_item'] ?? null);
+
+        $teacherId = $teacher->getId();
+        $teacher = $this->teacherRepository->find($teacherId);
+        if (!$teacher)
+            return null;
+
+
+        $lesson = new Lesson();
+        $lesson->setCourse($course);
+        $lesson->setTeacher($teacher);
+        $lesson->setGroup($group);
+        $lesson->setRoom($room);
+        $lesson->setStartTime(new \DateTime($data['start']));
+        $lesson->setEndTime(new \DateTime($data['end']));
+        $lesson->setType($lessonType);
+        $lesson->setStatus($lessonStatus);
+
+        return $lesson;
     }
 
-    private function getCourse(string $name, OutputInterface $output): ?Course
+    private function getCourse(?string $name): ?Course
     {
+        if (!$name) return null;
+
+        if (isset($this->courseCache[$name]))
+            return $this->courseCache[$name];
+
         $course = $this->courseRepository->findOneBy(['name' => $name]);
         if (!$course) {
-            $output->writeln("<info>Room '{$name}' not found in database</info>");
-            return null;
+            $course = new Course();
+            $course->setName($name);
+            $this->entityManager->persist($course);
         }
 
+        $this->courseCache[$name] = $course;
         return $course;
     }
 
-    private function getGroup(string $name, bool $stationary, OutputInterface $output): ?Group
+    private function getGroup(string $name, bool $stationary): ?Group
     {
-        $group = $this->groupRepository->findOneBy([
-            'name' => $name,
-            'stationary' => $stationary
-        ]);
+        $groupKey = $name . '|' . ($stationary ? '1' : '0');
+        if (isset($this->groupCache[$groupKey]))
+            return $this->groupCache[$groupKey];
 
+        $group = $this->groupRepository->findOneBy(['name' => $name, 'stationary' => $stationary]);
         if ($group) {
+            $this->groupCache[$groupKey] = $group;
             return $group;
         }
 
-        $group = $this->groupRepository->findOneBy([
-            'name' => $name,
-            'stationary' => null
-        ]);
-
+        $group = $this->groupRepository->findOneBy(['name' => $name, 'stationary' => null]);
         if ($group) {
             $group->setStationary($stationary);
             $this->entityManager->persist($group);
-            $output->writeln("<info>Updated group '{$name}' stationary = " . ($stationary ? 'true' : 'false') . ".</info>");
+            $this->groupCache[$groupKey] = $group;
             return $group;
         }
 
@@ -236,19 +229,27 @@ class ImportTeacherScheduleCommand extends Command
         $group->setName($name);
         $group->setStationary($stationary);
         $this->entityManager->persist($group);
-        $output->writeln("<info>Created new group '{$name}' stationary = " . ($stationary ? 'true' : 'false') . ".</info>");
+        $this->groupCache[$groupKey] = $group;
 
         return $group;
     }
 
-    private function getRoom(string $name, OutputInterface $output): ?Room
+    private function getRoom(?string $name): ?Room
     {
-        $room = $this->roomRepository->findOneBy(['name' => $name]);
-        if (!$room) {
-            $output->writeln("<info>Room '{$name}' not found in database</info>");
-            return null;
-        }
+        if (!$name) return null;
 
+        if (isset($this->roomCache[$name]))
+            return $this->roomCache[$name];
+
+        $name_array = explode(' ', $name);
+        array_shift($name_array);
+        $cleanRoomName = implode(' ', $name_array);
+
+        $room = $this->roomRepository->findOneBy(['name' => $cleanRoomName]);
+        if (!$room)
+            return null;
+
+        $this->roomCache[$name] = $room;
         return $room;
     }
 
@@ -261,6 +262,27 @@ class ImportTeacherScheduleCommand extends Command
     private function validateDate(string $date): bool
     {
         $d = \DateTime::createFromFormat('Y-m-d', $date);
-        return $d->format('Y-m-d') === $date;
+        return $d && $d->format('Y-m-d') === $date;
+    }
+
+    private function determineLessonType(?string $lesson_form): int
+    {
+        return match($lesson_form) {
+            'laboratorium' => Lesson::TYPE_LAB,
+            'audytoryjne' => Lesson::TYPE_AUDITORY,
+            'lektorat' => Lesson::TYPE_LECTORATE,
+            'seminarium' => Lesson::TYPE_SEMINAR,
+            'projekt' => Lesson::TYPE_PROJECT,
+            default => Lesson::TYPE_LECTURE,
+        };
+    }
+
+    private function determineLessonStatus(?string $lesson_status): int
+    {
+        return match($lesson_status) {
+            'konsultacje' => Lesson::STATUS_COSNULT,
+            'wyjątek' => Lesson::STATUS_EXCEPT,
+            default => Lesson::STATUS_NORMAL,
+        };
     }
 }

@@ -25,6 +25,12 @@ class Lesson
     const TYPE_LAB = 2;
     const TYPE_AUDITORY = 3;
     const TYPE_LECTORATE = 4;
+    const TYPE_SEMINAR = 5;
+    const TYPE_PROJECT = 6;
+
+    const STATUS_NORMAL = 1;
+    const STATUS_EXCEPT = 2;
+    const STATUS_COSNULT = 3;
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'IDENTITY')]
     #[ORM\Column(type: 'integer')]
@@ -34,19 +40,19 @@ class Lesson
      * @var Course|null
      */
     #[ORM\ManyToOne(inversedBy: 'lessons')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     private ?Course $course = null;
 
     #[ORM\ManyToOne(inversedBy: 'lessons')]
     #[ORM\JoinColumn(nullable: true)]
     private ?Group $group = null;
 
-    #[ORM\ManyToOne(inversedBy: 'lessons')]
+    #[ORM\ManyToOne(cascade: ['persist'], inversedBy: 'lessons')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Teacher $teacher = null;
 
     #[ORM\ManyToOne(inversedBy: 'lessons')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     private ?Room $room = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]

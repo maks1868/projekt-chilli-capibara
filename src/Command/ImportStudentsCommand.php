@@ -37,13 +37,14 @@ class ImportStudentsCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        ini_set('memory_limit', '256M');
+        ini_set('memory_limit', '1024M');
 
         $startId = 30000;
         $endId = 60000;
+//        $startDate = '2024-10-01';
+//        $endDate = '2025-02-28';
         $startDate = '2024-10-01';
         $endDate = '2025-02-28';
-
         if (!$this->validateDate($startDate) || !$this->validateDate($endDate)) {
             $output->writeln('<error>Start and End dates must be in YYYY-MM-DD format.</error>');
             return Command::FAILURE;
@@ -71,12 +72,14 @@ class ImportStudentsCommand extends Command
 
                 $data = $response->toArray();
 
+                if (empty($data) || $data === [[]])
+                    continue;
+
+
                 $uniqueGroupNames = [];
-                foreach ($data as $lesson) {
-                    if (isset($lesson['group_name'])) {
+                foreach ($data as $lesson)
+                    if (isset($lesson['group_name']))
                         $uniqueGroupNames[] = $lesson['group_name'];
-                    }
-                }
 
                 $uniqueGroupNames = array_unique($uniqueGroupNames);
 
@@ -95,9 +98,7 @@ class ImportStudentsCommand extends Command
                         continue;
                     }
 
-                    if (!$student->getGroups()->contains($group)) {
-                        $student->addGroup($group);
-                    }
+                    $student->addGroup($group);
                 }
 
                 $batch_count++;

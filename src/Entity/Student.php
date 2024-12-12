@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\StudentRepository;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -19,6 +20,12 @@ class Student
     #[ORM\ManyToMany(targetEntity: Group::class, inversedBy: 'students')]
     #[ORM\JoinTable(name: 'student_group')]
     private Collection $groups;
+
+    public function __construct()
+    {
+        // Initialize the Collection to avoid the typed property error
+        $this->groups = new ArrayCollection();
+    }
     public function getId(): ?int
     {
         return $this->id;
